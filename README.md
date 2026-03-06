@@ -43,6 +43,7 @@ This demonstrates how the model could be used in a real lending environment.
 # Dataset
 
 **Source:** Lending Club Loan Dataset
+* The raw dataset contained 2M+ rows and 160 columns 
 
 The dataset contains historical loan records including:
 
