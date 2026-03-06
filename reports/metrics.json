@@ -1,0 +1,56 @@
+{
+  "metrics": {
+    "logistic_default_0_5": {
+      "roc_auc": 0.7098858843492076,
+      "pr_auc": 0.37141605463702615,
+      "f1": 0.43031491491749774,
+      "threshold": 0.5,
+      "approval_rate_if_approve_low_pd": null
+    },
+    "xgb_default_0_5": {
+      "roc_auc": 0.7320584034530506,
+      "pr_auc": 0.4068379369042405,
+      "f1": 0.4458037400410756,
+      "threshold": 0.5,
+      "approval_rate_if_approve_low_pd": null
+    },
+    "xgb_best_f1_threshold": 0.5202020202020202,
+    "xgb_best_f1": 0.4474453439659469
+  },
+  "best_profit_policy": {
+    "threshold": 0.63,
+    "approval_rate": 0.7977907071522556,
+    "approved_default_rate": 0.1458388066672505,
+    "realized_value_total": 180675979.0,
+    "realized_value_per_loan": 879.0221901119966
+  },
+  "notes": {
+    "structural_cols": [
+      "mths_since_last_delinq",
+      "mths_since_recent_bc",
+      "mths_since_recent_inq"
+    ],
+    "zero_meaning_cols": [
+      "delinq_2yrs",
+      "pub_rec",
+      "tax_liens",
+      "pub_rec_bankruptcies",
+      "collections_12_mths_ex_med",
+      "acc_now_delinq",
+      "delinq_amnt",
+      "num_tl_30dpd",
+      "num_tl_120dpd_2m",
+      "num_tl_90g_dpd_24m"
+    ],
+    "ordinal_cols": [
+      "sub_grade",
+      "verification_status",
+      "initial_list_status"
+    ],
+    "one_hot_cols": [
+      "home_ownership",
+      "purpose",
+      "application_type"
+    ]
+  }
+}
