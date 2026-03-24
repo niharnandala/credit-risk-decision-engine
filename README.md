@@ -3,6 +3,10 @@
 **Live Web App:**
 [https://creditloanriskapp-ijs8szkybgwes6qkuynzh5.streamlit.app/](https://creditloanriskapp-ijs8szkybgwes6qkuynzh5.streamlit.app/)
 
+## 🎥 App Walkthrough
+
+[▶️ Watch Demo Video](Credit-App-Recording.webm)
+
 This project builds a complete **credit risk prediction system** using historical Lending Club loan data. The goal is to estimate the probability that a borrower will default on a loan and show how lenders can use model predictions to make smarter approval decisions.
 
 The project demonstrates a full machine learning workflow — from raw data cleaning to a deployed interactive web application.
