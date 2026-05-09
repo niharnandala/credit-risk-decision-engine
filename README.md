@@ -1,317 +1,163 @@
-# Credit Risk Prediction System (Lending Club)
+# Credit Risk Scoring & Decision System
 
-**Live Web App:**
-[https://creditloanriskapp-ijs8szkybgwes6qkuynzh5.streamlit.app/](https://creditloanriskapp-ijs8szkybgwes6qkuynzh5.streamlit.app/)
+> Not just a model — a full lending decision system with real business impact.
 
-## 🎥 App Walkthrough
+**Live App → [Open in Streamlit](https://creditloanriskapp-ijs8szkybgwes6qkuynzh5.streamlit.app/)**
 
 [▶️ Watch Demo Video](Credit-App-Recording.webm)
 
-This project builds a complete **credit risk prediction system** using historical Lending Club loan data. The goal is to estimate the probability that a borrower will default on a loan and show how lenders can use model predictions to make smarter approval decisions.
+---
 
-The project demonstrates a full machine learning workflow — from raw data cleaning to a deployed interactive web application.
+## What this is
+
+A production-ready credit risk system that estimates a borrower's probability of default and translates it into an actionable lending decision.
+
+Instead of just outputting a score:
+
+```
+Default probability = 0.68
+```
+
+The system outputs a decision:
+
+```
+High Risk → Decline or flag for manual review
+Portfolio default rate reduced: 20.1% → 15.5% (~22.7% risk reduction)
+```
+
+Built on 2M+ rows of Lending Club data with a leakage-free feature pipeline, XGBoost model, and a live Streamlit app that simulates real approval decisions.
 
 ---
 
-# Project Overview
+## Results
 
-Lenders constantly face a trade‑off:
-
-* Approve more loans to grow revenue
-* Avoid approving borrowers who may default
-
-To support this decision process, this project trains a machine learning model that estimates the **Probability of Default (PD)** for each borrower.
-
-These predicted probabilities can then be used to simulate different credit approval policies and measure their impact on portfolio risk.
-
----
-
-# Live Demo
-
-You can interact with the deployed model here:
-
-**[https://creditloanriskapp-ijs8szkybgwes6qkuynzh5.streamlit.app/](https://creditloanriskapp-ijs8szkybgwes6qkuynzh5.streamlit.app/)**
-
-The web application allows users to:
-
-* Enter borrower financial information
-* Automatically generate engineered credit features
-* Estimate probability of default
-* Classify the borrower into risk categories
-* Simulate a credit approval decision
-
-This demonstrates how the model could be used in a real lending environment.
+| Metric | Value |
+|--------|-------|
+| ROC-AUC | 0.73 |
+| PR-AUC | 0.41 |
+| KS Statistic | 0.34 |
+| Portfolio default rate | 20.1% → 15.5% (~22.7% reduction) |
+| Approval rate maintained | ~80% |
 
 ---
 
-# Dataset
+## Why it stands out
 
-**Source:** Lending Club Loan Dataset
-* The raw dataset contained 2M+ rows and 160 columns 
-
-The dataset contains historical loan records including:
-
-* Borrower financial attributes
-* Credit history information
-* Loan characteristics
-* Loan repayment outcomes
-
-### Target Variable
-
-```
-0 = Fully Paid
-1 = Default / Charged Off
-```
-
-Only **completed loans** were used in training to avoid label uncertainty.
+- **2M+ rows, 160 columns** — real scale, not a toy dataset
+- **Leakage-free by design** — post-origination columns explicitly removed
+- **Business decision simulation** — threshold optimization tied to real lending outcomes
+- **Interesting insight surfaced** — verified borrowers show higher default rates (lender-suspicion bias)
+- **Full deployment** — live Streamlit app with real-time borrower scoring
 
 ---
 
-# Data Preparation
+## System Design
 
-Before training the model, several important preprocessing steps were applied.
+### 1. Data preparation
+- Raw dataset: 2M+ rows, 160 columns
+- Filtered to completed loans only — avoids label uncertainty from active loans
+- Columns with >60% missing data removed
 
-## 1. Removing Data Leakage
+### 2. Leakage removal
+Post-origination columns removed — these are only known *after* a loan is repaid, so including them would let the model cheat:
+- Total payments received
+- Recoveries
+- Outstanding principal
+- Last payment amount
 
-Certain variables contain information that is only known **after a loan has already been issued or repaid**.
+### 3. Feature engineering
+Domain-specific features created to capture borrower financial stress:
 
-Examples include:
+| Feature | Formula |
+|---------|---------|
+| Loan-to-Income Ratio | `loan_amount / annual_income` |
+| Installment-to-Income Ratio | `monthly_payment / monthly_income` |
+| Credit Pressure Ratio | `total_balance / total_credit_limit` |
+| Delinquencies Per Year | `delinquencies / credit_history_years` |
 
-* total payments received
-* recoveries
-* outstanding principal
-* last payment amount
+Missing indicator flags created for sparse variables (e.g. `mths_since_last_delinq_missing_flag`) to preserve information rather than impute blindly.
 
-Including these would allow the model to "cheat" by using future information.
+### 4. Modeling
+- Logistic Regression — baseline
+- XGBoost — final production model (handles nonlinear relationships, complex feature interactions)
 
-These columns were removed to ensure the model only uses information available at **loan approval time**.
-
----
-
-## 2. Handling Missing Values
-
-Columns with more than **60% missing data** were removed.
-
-For remaining variables:
-
-* Numerical features were imputed using **median values**
-* Categorical features were imputed using the **most frequent category**
-
-Certain variables represent events that may never have happened (for example, months since last delinquency).
-
-For these features, additional **missing indicator flags** were created to preserve that information.
-
-Example:
-
-```
-mths_since_last_delinq_missing_flag
-mths_since_recent_inq_missing_flag
-```
+### 5. Decision layer
+- Threshold not fixed at 0.5 — evaluated across the full range
+- Portfolio default rate simulated at each threshold
+- Final threshold selected to minimize defaults while maintaining ~80% approval rate
 
 ---
 
-## 3. Feature Engineering
+## Key Design Decisions
 
-To better capture borrower financial stress and credit behavior, several domain‑specific features were created.
-
-Examples include:
-
-**Loan‑to‑Income Ratio**
-
-```
-loan_to_income = loan_amount / annual_income
-```
-
-**Installment‑to‑Income Ratio**
-
-```
-installment_to_income = monthly_payment / monthly_income
-```
-
-**Credit Pressure Ratio**
-
-```
-total_balance / total_credit_limit
-```
-
-**Delinquencies Per Year**
-
-```
-delinquencies / credit_history_years
-```
-
-These engineered features help the model better capture **repayment pressure and credit usage behavior**.
+| Decision | Reason |
+|----------|--------|
+| Removed post-origination columns | Prevents data leakage — model must only use info available at approval time |
+| Missing indicator flags | Preserves signal from sparse variables instead of losing it through imputation |
+| XGBoost over Logistic Regression | Better captures nonlinear credit risk patterns in tabular data |
+| Threshold optimization | Fixed 0.5 threshold ignores business cost asymmetry between false positives and false negatives |
 
 ---
 
-# Modeling Approach
+## Model Insight: Lender-Suspicion Bias
 
-Two models were trained and evaluated.
+Feature importance analysis revealed something counterintuitive:
 
-## Logistic Regression
+> **Verified borrowers sometimes show higher default rates than non-verified borrowers.**
 
-Used as a baseline model.
-
-Advantages:
-
-* Interpretable
-* Simple to train
-* Provides a benchmark for comparison
+This happens because lenders tend to request verification when they already suspect higher risk. Verification status ends up correlated with lender suspicion — not borrower reliability. This was documented as a key model interpretation note, not treated as a bug.
 
 ---
 
-## XGBoost (Final Model)
+## Live App
 
-Gradient boosted trees were used for the final production model.
+**[→ Open App](https://creditloanriskapp-ijs8szkybgwes6qkuynzh5.streamlit.app/)**
 
-Why XGBoost:
-
-* Handles nonlinear relationships
-* Captures complex feature interactions
-* Performs well on structured tabular data
+What you can do:
+- Enter borrower financial information
+- Get real-time probability of default
+- See risk classification and approval decision
+- Explore how engineered features are generated automatically from raw inputs
 
 ---
 
-# Model Performance
-
-Evaluation metrics used:
-
-* ROC‑AUC
-* PR‑AUC
-* F1 Score
-* KS Statistic
-
-Final model performance:
+## Project Structure
 
 ```
-ROC‑AUC ≈ 0.73
-PR‑AUC ≈ 0.41
-KS Statistic ≈ 0.34
-```
-
-These results show strong ability to distinguish between safe borrowers and risky borrowers.
-
----
-
-# Business Decision Simulation
-
-Instead of using a fixed classification threshold like **0.50**, the model was evaluated using a **portfolio decision framework**.
-
-Different probability thresholds were tested to measure how approval decisions affect portfolio risk.
-
-Example outcome:
-
-```
-Baseline default rate: 20.1%
-
-Optimized portfolio default rate: 15.5%
-
-Risk reduction: ~22.7%
-```
-
-This demonstrates how predictive models can help lenders:
-
-* Reduce credit losses
-* Control portfolio risk
-* Allocate capital more efficiently
-
----
-
-# Model Insights
-
-Feature importance analysis identified several strong predictors of default risk.
-
-Key drivers include:
-
-* Loan sub‑grade
-* Loan term
-* Debt‑to‑income ratio
-* Credit utilization
-* Recent credit inquiries
-* Loan‑to‑income ratio
-
-### Interesting Observation
-
-In the dataset, **verified borrowers sometimes show higher default rates than non‑verified borrowers**.
-
-This occurs because lenders often verify borrowers when they already suspect higher risk. In such cases, verification status becomes correlated with **lender suspicion rather than borrower reliability**.
-
----
-
-# Deployment
-
-The trained model is deployed as a **Streamlit web application**.
-
-Application workflow:
-
-1. Collect borrower inputs
-2. Generate engineered features automatically
-3. Construct the full feature vector
-4. Apply the trained preprocessing pipeline
-5. Predict probability of default
-6. Display risk classification and approval decision
-
-This demonstrates a realistic end‑to‑end machine learning deployment.
-
----
-
-# Tech Stack
-
-Python
-Pandas
-NumPy
-Scikit‑learn
-XGBoost
-Streamlit
-
----
-
-# Repository Structure
-
-```
-app/
-    streamlit_app.py
-
-models/
-    xgb_credit_model.pkl
-
-artifacts/
-    feature_schema.json
-    feature_defaults.json
-
-src/
-    data processing and modeling pipeline
-
-reports/
-    evaluation outputs
+credit-risk-decision-engine/
+├── app/
+│   └── streamlit_app.py        # Streamlit UI
+├── src/                        # Data processing & modeling pipeline
+├── models/
+│   └── xgb_credit_model.pkl    # Trained model
+├── artifacts/
+│   ├── feature_schema.json
+│   └── feature_defaults.json
+├── reports/                    # Evaluation outputs
+├── requirements.txt
+└── README.md
 ```
 
 ---
 
-# Running the Project Locally
+## Running Locally
 
-Clone the repository:
-
-```
+```bash
 git clone https://github.com/niharnandala/credit_loan_risk_app.git
 cd credit_loan_risk_app
-```
-
-Install dependencies:
-
-```
 pip install -r requirements.txt
-```
-
-Run the web application:
-
-```
 streamlit run app/streamlit_app.py
 ```
 
 ---
 
-# Author
+## Tech Stack
 
-**Nihar**
-Machine Learning & Data Science Projects
+`Python` · `XGBoost` · `Scikit-learn` · `Pandas` · `NumPy` · `Streamlit`
+
+---
+
+## Author
+
+**Nihar Nandala**
+[GitHub](https://github.com/niharnandala) · [LinkedIn](https://linkedin.com/in/niharnandala)
